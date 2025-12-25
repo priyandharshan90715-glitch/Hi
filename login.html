@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login / Sign Up</title>
+<style>
+/* Basic styling omitted for brevity, same as before */
+</style>
+</head>
+<body>
+
+<div id="authContainer">
+  <div id="loginForm">
+    <h1>Login</h1>
+    <input type="email" id="loginEmail" placeholder="Email">
+    <input type="password" id="loginPass" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p>Don't have account? <a onclick="toggleForm()">Sign Up</a></p>
+  </div>
+
+  <div id="signupForm" style="display:none;">
+    <h1>Sign Up</h1>
+    <input type="text" id="signupUser" placeholder="Username">
+    <input type="email" id="signupEmail" placeholder="Email">
+    <input type="password" id="signupPass" placeholder="Password">
+    <button onclick="signup()">Sign Up</button>
+    <p>Already have account? <a onclick="toggleForm()">Login</a></p>
+  </div>
+</div>
+
+<!-- Normal user dashboard -->
+<div id="dashboard" style="display:none;">
+  <h2>User Dashboard</h2>
+  <p>User: <span id="dashUser"></span></p>
+  <input id="purchaseInput" placeholder="Add purchase">
+  <button onclick="addPurchase()">Add</button>
+  <ul id="purchaseList"></ul>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<script>
+// Toggle form
+function toggleForm() {
+  const login = document.getElementById("loginForm");
+  const signup = document.getElementById("signupForm");
+  login.style.display = login.style.display === "none" ? "block" : "none";
+  signup.style.display = signup.style.display === "none" ? "block" : "none";
+}
+
+// Initialize users storage
+if (!localStorage.getItem("users")) localStorage.setItem("users", JSON.stringify([]));
+
+// Sign Up
+function signup() {
+  const email = document.getElementById("signupEmail").value.trim();
+  const username = document.getElementById("signupUser").value.trim();
+  const pass = document.getElementById("signupPass").value.trim();
+
+  if (!email || !username || !pass) return alert("Fill all fields");
+  if (pass.length < 6) return alert("Password too short");
+
+  // Admin check
+  if (email.toLowerCase() === "admin@gmail.com") {
+    if (localStorage.getItem("admin_pass")) return alert("Admin already registered, login!");
+    localStorage.setItem("admin_email", email);
+    localStorage.setItem("admin_name", username);
+    localStorage.setItem("admin_pass", pass);
+    localStorage.setItem("purchases_admin", JSON.stringify([]));
+    alert("Admin registered! Login now.");
+    toggleForm();
+    return;
+  }
+
+  // Normal users
+  const users = JSON.parse(localStorage.getItem("users"));
+  if (users.includes(email)) return alert("Email already registered!");
+  users.push(email);
+  localStorage.setItem("users", JSON.stringify(users));
+  localStorage.setItem("user_pass_" + email, pass);
+  localStorage.setItem("purchases_" + email, JSON.stringify([]));
+  alert("Signup successful! Login now.");
+  toggleForm();
+}
+
+// Login
+function login() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+
+  if (!email || !pass) return alert("Enter email & password");
+
+  // Admin login
+  const adminEmail = localStorage.getItem("admin_email");
+  const adminPass = localStorage.getItem("admin_pass");
+
+  if (email === adminEmail && pass === adminPass) {
+    window.location.href = "admin.html"; // Redirect to admin page
+    return;
+  }
+
+  // Normal user
+  const storedPass = localStorage.getItem("user_pass_" + email);
+  if (!storedPass || storedPass !== pass) return alert("Invalid credentials");
+
+  document.getElementById("authContainer").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+  currentUser = email;
+  loadPurchases();
+}
+
+// Normal user dashboard
+let currentUser = "";
+function loadPurchases() {
+  const list = document.getElementById("purchaseList");
+  const data = JSON.parse(localStorage.getItem("purchases_" + currentUser)) || [];
+  document.getElementById("dashUser").innerText = currentUser;
+  list.innerHTML = "";
+  data.forEach((item, i) => {
+    list.innerHTML += `<li>${item} <button onclick="editPurchase(${i})">✏</button>
+      <button onclick="deletePurchase(${i})">🗑</button></li>`;
+  });
+}
+
+function addPurchase() {
+  const input = document.getElementById("purchaseInput");
+  if (!input.value.trim()) return;
+  const data = JSON.parse(localStorage.getItem("purchases_" + currentUser)) || [];
+  data.push(input.value.trim());
+  localStorage.setItem("purchases_" + currentUser, JSON.stringify(data));
+  input.value = "";
+  loadPurchases();
+}
+
+function editPurchase(i) {
+  const data = JSON.parse(localStorage.getItem("purchases_" + currentUser));
+  const newItem = prompt("Edit item", data[i]);
+  if (!newItem) return;
+  data[i] = newItem.trim();
+  localStorage.setItem("purchases_" + currentUser, JSON.stringify(data));
+  loadPurchases();
+}
+
+function deletePurchase(i) {
+  const data = JSON.parse(localStorage.getItem("purchases_" + currentUser));
+  data.splice(i, 1);
+  localStorage.setItem("purchases_" + currentUser, JSON.stringify(data));
+  loadPurchases();
+}
+
+function logout() {
+  location.reload();
+}
+</script>
+</body>
+</html>
