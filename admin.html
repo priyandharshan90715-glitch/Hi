@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<style>
+/* Same style as previous admin dashboard */
+</style>
+</head>
+<body>
+<h2>Admin Dashboard</h2>
+<label>Select User:</label>
+<select id="userSelect" onchange="loadAdminUser()">
+  <option value="">-- Select User --</option>
+</select>
+<input id="purchaseInputAdmin" placeholder="Enter purchase item">
+<button onclick="addPurchaseAdmin()">Add</button>
+<ul id="purchaseListAdmin"></ul>
+<button onclick="logout()">Logout</button>
+
+<script>
+// Load users
+function populateUsersAdmin() {
+  const users = JSON.parse(localStorage.getItem("users"));
+  const sel = document.getElementById("userSelect");
+  sel.innerHTML = `<option value="">-- Select User --</option>`;
+  users.forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
+}
+populateUsersAdmin();
+
+let adminCurrentUser = "";
+function loadAdminUser() {
+  adminCurrentUser = document.getElementById("userSelect").value;
+  loadPurchasesAdmin();
+}
+
+function loadPurchasesAdmin() {
+  const list = document.getElementById("purchaseListAdmin");
+  if (!adminCurrentUser) { list.innerHTML=""; return; }
+  const data = JSON.parse(localStorage.getItem("purchases_" + adminCurrentUser)) || [];
+  list.innerHTML="";
+  data.forEach((item,i)=>{
+    list.innerHTML += `<li>${item} <span>
+      <button onclick="editPurchaseAdmin(${i})">✏</button>
+      <button onclick="deletePurchaseAdmin(${i})">🗑</button>
+    </span></li>`;
+  });
+}
+
+function addPurchaseAdmin() {
+  if (!adminCurrentUser) return alert("Select a user!");
+  const input = document.getElementById("purchaseInputAdmin");
+  if (!input.value.trim()) return;
+  const data = JSON.parse(localStorage.getItem("purchases_" + adminCurrentUser)) || [];
+  data.push(input.value.trim());
+  localStorage.setItem("purchases_" + adminCurrentUser, JSON.stringify(data));
+  input.value = "";
+  loadPurchasesAdmin();
+}
+
+function editPurchaseAdmin(i) {
+  const data = JSON.parse(localStorage.getItem("purchases_" + adminCurrentUser));
+  const newItem = prompt("Edit purchase", data[i]);
+  if (!newItem) return;
+  data[i] = newItem.trim();
+  localStorage.setItem("purchases_" + adminCurrentUser, JSON.stringify(data));
+  loadPurchasesAdmin();
+}
+
+function deletePurchaseAdmin(i) {
+  const data = JSON.parse(localStorage.getItem("purchases_" + adminCurrentUser));
+  data.splice(i,1);
+  localStorage.setItem("purchases_" + adminCurrentUser, JSON.stringify(data));
+  loadPurchasesAdmin();
+}
+
+function logout() {
+  window.location.href = "login.html";
+}
+</script>
+</body>
+</html>
